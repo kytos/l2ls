@@ -1,7 +1,7 @@
 Overview
 ========
 
-The **of.l2ls** application is used in basic operations of switches. It
+The **of_l2ls** application is used in basic operation of switches. It
 implements the algorithm known as L2 Learning Switch, which aims to figure out
 which host is attached to which switch port. The switch keeps a table that
 stores a tuple containing the mac address (hardware address) and port number.
