@@ -23,9 +23,24 @@ Fixed
 Security
 ========
 
+[1.1.0] - 2018-06-15
+********************************
+Added
+=====
+- Added support to use OpenFlow 1.3.
 
-[2017.1b2] - "bethania" beta2 - 2017-05-05
-******************************************
+Changed
+=======
+- Ignore LLDP packages.
+- Updating kytos and python-openflow requirements versions.
+- Only use buffer_id in packet_out.
+
+Fixed
+=====
+- Fixed Ghost hosts appearing in web interface.
+
+[1.0.0] - 2017-05-05
+********************
 Changed
 =======
 - Installation process of NApps.
@@ -41,16 +56,16 @@ Fixed
 - Several bug fixes.
 
 
-[2017.1b1] - "bethania" beta1 - 2017-03-24
-******************************************
+[0.2.0] - 2017-03-24
+********************
 Added
 =====
 - Python3.6 requirement.
 - Individual Settings file.
 
 
-[2016.1b0] - 1.1.0 beta0 - 2016-11-09
-*************************************
+[0.1.0] - 2016-11-09
+********************
 Added
 =====
 - kytos.json file with NApp metadata.
