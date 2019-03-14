@@ -23,6 +23,14 @@ Fixed
 Security
 ========
 
+[1.1.1] - 2019-03-13
+********************************
+Fixed
+=====
+
+- Fixed some linter issues.
+- Updated Scrutinizer configuration.
+
 [1.1.0] - 2018-06-15
 ********************************
 Added
