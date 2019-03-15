@@ -19,6 +19,8 @@ Removed
 
 Fixed
 =====
+- Fixed some linter issues.
+- Allow to run linter and tests on scrutinizer.
 
 Security
 ========
