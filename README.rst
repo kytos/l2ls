@@ -1,6 +1,8 @@
 Overview
 ========
 
+|License| |Build| |Coverage| |Quality|
+
 The **of_l2ls** application is used in basic operation of switches. It
 implements the algorithm known as L2 Learning Switch, which aims to figure out
 which host is attached to which switch port. The switch keeps a table that
@@ -41,3 +43,17 @@ number.
 When the host B answers the request, the switch adds to this table an entry
 mapping the mac address of host B to the port in which it is connected. This
 process goes on until the switch learns which port all hosts are connected.
+
+.. TAGs
+
+.. |License| image:: https://img.shields.io/github/license/kytos/kytos.svg
+   :target: https://github.com/kytos/of_l2ls/blob/master/LICENSE
+.. |Build| image:: https://scrutinizer-ci.com/g/kytos/of_l2ls/badges/build.png?b=master
+  :alt: Build status
+  :target: https://scrutinizer-ci.com/g/kytos/of_l2ls/?branch=master
+.. |Coverage| image:: https://scrutinizer-ci.com/g/kytos/of_l2ls/badges/coverage.png?b=master
+  :alt: Code coverage
+  :target: https://scrutinizer-ci.com/g/kytos/of_l2ls/?branch=master
+.. |Quality| image:: https://scrutinizer-ci.com/g/kytos/of_l2ls/badges/quality-score.png?b=master
+  :alt: Code-quality score
+  :target: https://scrutinizer-ci.com/g/kytos/of_l2ls/?branch=master
