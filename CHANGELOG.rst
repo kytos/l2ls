@@ -5,6 +5,29 @@ All notable changes to the kytos-napps project will be documented in this file.
 
 [UNRELEASED] - Under development
 *********************************
+Added
+=====
+- Added support for automated tests and CI with Travis.
+- Added tags decorator to run tests by type and size.
+- Added unit tests.
+
+Changed
+=======
+- Changed README.rst to include some info badges.
+- Changed tests structure to separate unit and integration tests.
+
+Deprecated
+==========
+
+Removed
+=======
+
+Fixed
+=====
+- Fixed Scrutinizer coverage error.
+
+Security
+========
 
 [1.1.1] - 2019-03-15
 ********************
