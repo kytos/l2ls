@@ -86,8 +86,9 @@ class TestCoverage(SimpleCommand):
         """Run unittest quietly and display coverage report."""
         # cmd = 'coverage3 run -m unittest discover -qs src' \
         #       ' && coverage3 report'
-
-        cmd = 'coverage3 run -m unittest && coverage3 report'
+        # Temporarily only unit tests is enabled
+        cmd = 'coverage3 run -m unittest discover -s tests/unit \
+               && coverage3 report'
         call(cmd, shell=True)
 
 
@@ -100,7 +101,7 @@ class Linter(SimpleCommand):
         """Run Yala."""
         print('Yala is running. It may take several seconds...')
         try:
-            check_call('yala *.py', shell=True)
+            check_call('yala *.py tests', shell=True)
             print('No linter error found.')
         except RuntimeError as error:
             print('Linter check failed. Fix the error(s) above and try again.')
