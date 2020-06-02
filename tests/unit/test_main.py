@@ -2,10 +2,11 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch
 
-from kytos.lib.helpers import (get_connection_mock, get_controller_mock,
-                               get_kytos_event_mock, get_switch_mock)
+from kytos.lib.helpers import (get_controller_mock, get_kytos_event_mock,
+                               get_switch_mock)
 
 
+# pylint: disable=protected-access
 class TestMain(TestCase):
     """Tests for the Main class."""
 
