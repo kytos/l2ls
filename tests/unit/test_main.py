@@ -24,27 +24,35 @@ class TestMain(TestCase):
     @patch('napps.kytos.of_l2ls.main.Output13')
     @patch('napps.kytos.of_l2ls.main.FlowMod13')
     def test_install_table_miss_flow(self, *args):
-        """Test install_table_miss_flow method."""
+        """Test _create_flow_mod method for flow_mod 1.3 packet."""
         (mock_flow_mod, mock_action, mock_instruction, mock_kytos_event,
          mock_buffer_put) = args
 
-        kytos_event = MagicMock()
+        flow_mod = MagicMock()
+        flow_mod.instructions = []
+        instruction = MagicMock()
+        instruction.actions = []
+        action = MagicMock()
 
-        mock_flow_mod.return_value = MagicMock()
-        mock_action.return_value = MagicMock()
-        mock_instruction.return_value = MagicMock()
-        mock_kytos_event.return_value = kytos_event
+        mock_flow_mod.return_value = flow_mod
+        mock_action.return_value = action
+        mock_instruction.return_value = instruction
 
         switch = get_switch_mock("00:00:00:00:00:00:00:01", 0x04)
         event = get_kytos_event_mock(name='kytos/core.switch.new',
                                      content={'switch': switch})
         self.napp.install_table_miss_flow(event)
 
-        mock_flow_mod.assert_called()
-        mock_action.assert_called()
-        mock_instruction.assert_called()
-        mock_kytos_event.assert_called()
-        mock_buffer_put.assert_called_with(kytos_event)
+        self.assertEqual(flow_mod.command, 0)
+        self.assertEqual(instruction.actions[0], action)
+        self.assertEqual(flow_mod.instructions[0], instruction)
+
+        event_call = call(name=('kytos/of_l2ls.messages.out.'
+                                'ofpt_flow_mod'),
+                          content={'destination': switch.connection,
+                                   'message': flow_mod})
+        mock_kytos_event.assert_has_calls([event_call])
+        mock_buffer_put.assert_called_once()
 
     @patch('napps.kytos.of_l2ls.main.Output10')
     @patch('napps.kytos.of_l2ls.main.FlowMod10')
@@ -65,8 +73,6 @@ class TestMain(TestCase):
         packet.ether_type = 0x800
         flow_mod_out = self.napp._create_flow_mod('0x01', packet, 1)
 
-        mock_flow_mod.assert_called()
-        mock_action.assert_called()
         self.assertEqual(flow_mod_out.actions[0], action)
         self.assertEqual(flow_mod_out.match.dl_src, packet.source.value)
         self.assertEqual(flow_mod_out.match.dl_dst, packet.destination.value)
@@ -102,16 +108,11 @@ class TestMain(TestCase):
         oxm_tlvs = [match_dl_type, match_dl_src, match_dl_dst]
 
         mock_flow_mod.return_value = flow_mod
-        mock_action.return_value = MagicMock()
         mock_instruction.return_value = instruction
         mock_oxm_tlv.side_effect = oxm_tlvs
 
         flow_mod_out = self.napp._create_flow_mod('0x04', MagicMock(), 2)
 
-        mock_flow_mod.assert_called()
-        mock_oxm_tlv.assert_called()
-        mock_action.assert_called()
-        mock_instruction.assert_called()
         self.assertEqual(flow_mod.match.oxm_match_fields, oxm_tlvs)
         self.assertEqual(flow_mod.instructions[0], instruction)
         self.assertEqual(flow_mod_out.command, 0)
@@ -136,8 +137,6 @@ class TestMain(TestCase):
         packet.data = '1'
         packet_out = self.napp._create_packet_out('0x01', packet, [])
 
-        mock_packet_out.assert_called()
-        mock_action.assert_called()
         self.assertEqual(packet_out.actions[0], action)
         self.assertEqual(packet_out.buffer_id, packet.buffer_id)
         self.assertEqual(packet_out.in_port, packet.in_port)
@@ -162,8 +161,6 @@ class TestMain(TestCase):
         packet.data = '2'
         packet_out = self.napp._create_packet_out('0x04', packet, [])
 
-        mock_packet_out.assert_called()
-        mock_action.assert_called()
         self.assertEqual(packet_out.actions[0], action)
         self.assertEqual(packet_out.buffer_id, packet.buffer_id)
         self.assertEqual(packet_out.in_port, packet.in_port)
@@ -179,35 +176,41 @@ class TestMain(TestCase):
         (mock_ethernet, mock_kytos_event, mock_create_flow_mod,
          mock_create_packet_out, mock_buffer_put) = args
 
-        switch = get_switch_mock("00:00:00:00:00:00:00:01", 0x04)
-        ports = [1, 2]
-
         ethernet = MagicMock()
-        ethernet.source = 'sw'
-        kevent_01 = MagicMock()
-        kevent_02 = MagicMock()
-
-        switch.where_is_mac.return_value = ports
         mock_ethernet.return_value = ethernet
-        mock_create_flow_mod.return_value = MagicMock()
-        mock_create_packet_out.return_value = MagicMock()
-        mock_kytos_event.side_effect = [kevent_01, kevent_02]
 
-        event_name = 'kytos/of_core.v0x0[14].messages.in.ofpt_packet_in'
+        flow_mod = MagicMock()
+        mock_create_flow_mod.return_value = flow_mod
+
+        packet_out = MagicMock()
+        mock_create_packet_out.return_value = packet_out
+
+        ports = [1, 2]
+        switch = get_switch_mock("00:00:00:00:00:00:00:01", 0x04)
+        switch.where_is_mac.return_value = ports
         message = MagicMock()
         message.reason = 0
         message.in_port = 1
-        event = get_kytos_event_mock(name=event_name,
+        event = get_kytos_event_mock(name='kytos/of_core.v0x0[14].messages.in.'
+                                          'ofpt_packet_in',
                                      content={'source': switch.connection,
                                               'message': message})
 
         self.napp.handle_packet_in(event)
 
-        mock_ethernet.assert_called()
         switch.update_mac_table.assert_called_with(ethernet.source,
                                                    message.in_port)
         mock_create_flow_mod.assert_called_with(switch.ofp_version,
                                                 ethernet, ports[0])
         mock_create_packet_out.assert_called_with(switch.ofp_version,
                                                   message, ports)
-        mock_buffer_put.assert_has_calls([call(kevent_01), call(kevent_02)])
+        calls = [call(name=('kytos/of_l2ls.messages.out.'
+                            'ofpt_flow_mod'),
+                      content={'destination': event.source,
+                               'message': flow_mod}),
+                 call(name=('kytos/of_l2ls.messages.out.'
+                            'ofpt_packet_out'),
+                      content={'destination': event.source,
+                               'message': packet_out})]
+        mock_kytos_event.assert_has_calls(calls)
+        self.assertEqual(mock_buffer_put.call_count, 2)
