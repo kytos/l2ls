@@ -1,10 +1,46 @@
 #########
 Changelog
 #########
-All notable changes to the kytos-napps project will be documented in this file.
+All notable changes to the ``of_l2ls`` project will be documented in this file.
 
 [UNRELEASED] - Under development
-*********************************
+********************************
+Added
+=====
+
+Changed
+=======
+
+Deprecated
+==========
+
+Removed
+=======
+
+Fixed
+=====
+
+Security
+========
+
+
+[1.1.2] - 2020-07-23
+********************
+Added
+=====
+- Added unit tests: from 0% to 98%
+- Added tags decorator to run tests by type and size.
+- Added support for automated tests and CI with Travis.
+
+Changed
+=======
+- Changed tests structure to separate unit and integration tests.
+- Changed README.rst to include some info badges.
+
+Fixed
+=====
+- Fixed Scrutinizer coverage error.
+
 
 [1.1.1] - 2019-03-15
 ********************
