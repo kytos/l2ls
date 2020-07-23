@@ -1,7 +1,7 @@
 #########
 Changelog
 #########
-All notable changes to the kytos-napps project will be documented in this file.
+All notable changes to the ``of_l2ls`` project will be documented in this file.
 
 [UNRELEASED] - Under development
 ********************************
