@@ -81,12 +81,11 @@ class TestMain(TestCase):
         self.assertEqual(flow_mod_out.priority, 10)
 
     @patch('napps.kytos.of_l2ls.main.InstructionApplyAction')
-    @patch('napps.kytos.of_l2ls.main.Output13')
     @patch('napps.kytos.of_l2ls.main.OxmTLV')
     @patch('napps.kytos.of_l2ls.main.FlowMod13')
     def test_create_flow_mod_13(self, *args):
         """Test _create_flow_mod method for flow_mod 1.3 packet."""
-        (mock_flow_mod, mock_oxm_tlv, mock_action, mock_instruction) = args
+        (mock_flow_mod, mock_oxm_tlv, mock_instruction) = args
 
         flow_mod = MagicMock()
         flow_mod.match.oxm_match_fields = []
