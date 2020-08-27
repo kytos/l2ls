@@ -7,12 +7,14 @@ from pyof.foundation.network_types import Ethernet
 from pyof.v0x01.asynchronous.packet_in import PacketInReason
 from pyof.v0x01.common.action import ActionOutput as Output10
 from pyof.v0x01.common.phy_port import Port as Port10
+from pyof.v0x01.common.phy_port import PortConfig as PortConfig10
 from pyof.v0x01.controller2switch.flow_mod import FlowMod as FlowMod10
 from pyof.v0x01.controller2switch.flow_mod import FlowModCommand
 from pyof.v0x01.controller2switch.packet_out import PacketOut as PacketOut10
 from pyof.v0x04.common.action import ActionOutput as Output13
 from pyof.v0x04.common.flow_instructions import InstructionApplyAction
 from pyof.v0x04.common.flow_match import OxmOfbMatchField, OxmTLV
+from pyof.v0x04.common.port import PortConfig as PortConfig13
 from pyof.v0x04.common.port import PortNo as Port13
 from pyof.v0x04.controller2switch.flow_mod import FlowMod as FlowMod13
 from pyof.v0x04.controller2switch.packet_out import PacketOut as PacketOut13
@@ -103,16 +105,36 @@ class Main(KytosNApp):
         return flow_mod
 
     @staticmethod
-    def _create_packet_out(version, packet, ports):
+    def _create_packet_out(version, packet, ports, switch):
         """Create a PacketOut message with the appropriate version and data."""
         if version == '0x01':
-            packet_out = PacketOut10()
             port = ports[0] if ports else Port10.OFPP_FLOOD
+
+            try:
+                iface = switch.get_interface_by_port_no(port.value)
+            except AttributeError:
+                iface = switch.get_interface_by_port_no(port)
+
+            if iface and (iface.config & PortConfig10.OFPPC_NO_FWD ==
+                          PortConfig10.OFPPC_NO_FWD):
+                return None
+
+            packet_out = PacketOut10()
             packet_out.actions.append(Output10(port=port))
 
         else:
-            packet_out = PacketOut13()
             port = ports[0] if ports else Port13.OFPP_FLOOD
+
+            try:
+                iface = switch.get_interface_by_port_no(port.value)
+            except AttributeError:
+                iface = switch.get_interface_by_port_no(port)
+
+            if iface and (iface.config & PortConfig13.OFPPC_NO_FWD ==
+                          PortConfig13.OFPPC_NO_FWD):
+                return None
+
+            packet_out = PacketOut13()
             packet_out.actions.append(Output13(port=port))
 
         packet_out.buffer_id = packet.buffer_id
@@ -166,7 +188,10 @@ class Main(KytosNApp):
             self.controller.buffers.msg_out.put(event_out)
 
         # Send the packet to correct destination or flood it
-        packet_out = self._create_packet_out(version, packet_in, ports)
+        packet_out = self._create_packet_out(version, packet_in, ports, switch)
+
+        if packet_out is None:
+            return
 
         event_out = KytosEvent(name=('kytos/of_l2ls.messages.out.'
                                      'ofpt_packet_out'),
