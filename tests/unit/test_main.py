@@ -4,6 +4,8 @@ from unittest.mock import MagicMock, call, patch
 
 from kytos.lib.helpers import (get_controller_mock, get_kytos_event_mock,
                                get_switch_mock)
+from pyof.v0x01.common.phy_port import PortConfig as PortConfig10
+from pyof.v0x04.common.port import PortConfig as PortConfig13
 
 
 # pylint: disable=protected-access
@@ -126,6 +128,7 @@ class TestMain(TestCase):
         packet_out = MagicMock()
         packet_out.actions = []
         action = MagicMock()
+        switch = MagicMock()
 
         mock_packet_out.return_value = packet_out
         mock_action.return_value = action
@@ -134,22 +137,38 @@ class TestMain(TestCase):
         packet.buffer_id = 1
         packet.in_port = 1
         packet.data = '1'
-        packet_out = self.napp._create_packet_out('0x01', packet, [])
+        packet_out = self.napp._create_packet_out('0x01', packet, [], switch)
 
         self.assertEqual(packet_out.actions[0], action)
         self.assertEqual(packet_out.buffer_id, packet.buffer_id)
         self.assertEqual(packet_out.in_port, packet.in_port)
         self.assertEqual(packet_out.data, packet.data)
 
+    def test_create_packet_out_10__none(self):
+        """Test _create_packet_out method for packet_out 1.0 packet when
+           interface is OFPPC_NO_FWD.
+        """
+        packet = MagicMock()
+        iface = MagicMock()
+        iface.config = PortConfig10.OFPPC_NO_FWD
+        switch = MagicMock()
+        switch.interfaces = {1: iface}
+        switch.get_interface_by_port_no.return_value = iface
+
+        packet_out = self.napp._create_packet_out('0x01', packet, [1], switch)
+
+        self.assertIsNone(packet_out)
+
     @patch('napps.kytos.of_l2ls.main.Output13')
     @patch('napps.kytos.of_l2ls.main.PacketOut13')
     def test_create_packet_out_13(self, *args):
-        """Test _get_lldp_interfaces method for packet_out 1.3 packet."""
+        """Test _create_packet_out method for packet_out 1.3 packet."""
         (mock_packet_out, mock_action) = args
 
         packet_out = MagicMock()
         packet_out.actions = []
         action = MagicMock()
+        switch = MagicMock()
 
         mock_packet_out.return_value = packet_out
         mock_action.return_value = action
@@ -158,12 +177,27 @@ class TestMain(TestCase):
         packet.buffer_id = 2
         packet.in_port = 2
         packet.data = '2'
-        packet_out = self.napp._create_packet_out('0x04', packet, [])
+        packet_out = self.napp._create_packet_out('0x04', packet, [], switch)
 
         self.assertEqual(packet_out.actions[0], action)
         self.assertEqual(packet_out.buffer_id, packet.buffer_id)
         self.assertEqual(packet_out.in_port, packet.in_port)
         self.assertEqual(packet_out.data, packet.data)
+
+    def test_create_packet_out_13__none(self):
+        """Test _create_packet_out method for packet_out 1.3 packet when
+           interface is OFPPC_NO_FWD.
+        """
+        packet = MagicMock()
+        iface = MagicMock()
+        iface.config = PortConfig13.OFPPC_NO_FWD
+        switch = MagicMock()
+        switch.interfaces = {1: iface}
+        switch.get_interface_by_port_no.return_value = iface
+
+        packet_out = self.napp._create_packet_out('0x04', packet, [1], switch)
+
+        self.assertIsNone(packet_out)
 
     @patch('kytos.core.buffers.KytosEventBuffer.put')
     @patch('napps.kytos.of_l2ls.main.Main._create_packet_out')
@@ -199,10 +233,10 @@ class TestMain(TestCase):
 
         switch.update_mac_table.assert_called_with(ethernet.source,
                                                    message.in_port)
-        mock_create_flow_mod.assert_called_with(switch.ofp_version,
-                                                ethernet, ports[0])
-        mock_create_packet_out.assert_called_with(switch.ofp_version,
-                                                  message, ports)
+        mock_create_flow_mod.assert_called_with(switch.ofp_version, ethernet,
+                                                ports[0])
+        mock_create_packet_out.assert_called_with(switch.ofp_version, message,
+                                                  ports, switch)
         calls = [call(name=('kytos/of_l2ls.messages.out.'
                             'ofpt_flow_mod'),
                       content={'destination': event.source,
