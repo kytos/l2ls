@@ -1,5 +1,5 @@
 """NApp that solve the L2 Learning Switch algorithm."""
-
+import requests
 from kytos.core import KytosEvent, KytosNApp, log
 from kytos.core.helpers import listen_to
 from pyof.foundation.network_types import Ethernet
@@ -8,15 +8,10 @@ from pyof.v0x01.asynchronous.packet_in import PacketInReason
 from pyof.v0x01.common.action import ActionOutput as Output10
 from pyof.v0x01.common.phy_port import Port as Port10
 from pyof.v0x01.common.phy_port import PortConfig as PortConfig10
-from pyof.v0x01.controller2switch.flow_mod import FlowMod as FlowMod10
-from pyof.v0x01.controller2switch.flow_mod import FlowModCommand
 from pyof.v0x01.controller2switch.packet_out import PacketOut as PacketOut10
 from pyof.v0x04.common.action import ActionOutput as Output13
-from pyof.v0x04.common.flow_instructions import InstructionApplyAction
-from pyof.v0x04.common.flow_match import OxmOfbMatchField, OxmTLV
 from pyof.v0x04.common.port import PortConfig as PortConfig13
 from pyof.v0x04.common.port import PortNo as Port13
-from pyof.v0x04.controller2switch.flow_mod import FlowMod as FlowMod13
 from pyof.v0x04.controller2switch.packet_out import PacketOut as PacketOut13
 
 from napps.kytos.of_l2ls import settings
@@ -39,70 +34,52 @@ class Main(KytosNApp):
         Users shouldn't call this method directly.
         """
 
-    @listen_to('kytos/core.switch.new')
+    @listen_to('kytos/topology.switch.enabled')
     def install_table_miss_flow(self, event):
         """Install the TableMiss Flow in OF1.3 switches.
 
         This is needed because those drop packets by default.
         """
-        if event.content['switch'].ofp_version == '0x04':
-            flow_mod = FlowMod13()
-            flow_mod.command = FlowModCommand.OFPFC_ADD
+        dpid = event.content['dpid']
+        switch = self.controller.get_switch_by_dpid(dpid)
 
-            action = Output13(port=Port13.OFPP_CONTROLLER)
+        try:
+            version = switch.connection.protocol.version
+        except AttributeError:
+            version = None
+            log.debug(f'The OpenFlow version was not found for switch {dpid}.')
 
-            instruction = InstructionApplyAction()
-            instruction.actions.append(action)
+        if version != 0x04:
+            return
 
-            flow_mod.instructions.append(instruction)
+        flow = {}
+        flow['priority'] = 0
+        flow['actions'] = [{'action_type': 'output',
+                            'port': Port13.OFPP_CONTROLLER}]
 
-            destination = event.content['switch'].connection
-            event_out = KytosEvent(name=('kytos/of_l2ls.messages.out.'
-                                         'ofpt_flow_mod'),
-                                   content={'destination': destination,
-                                            'message': flow_mod})
-            self.controller.buffers.msg_out.put(event_out)
+        destination = switch.id
+        endpoint = f'{settings.FLOW_MANAGER_URL}/flows/{destination}'
+        data = {'flows': [flow]}
+
+        requests.post(endpoint, json=data)
 
     @staticmethod
-    def _create_flow_mod(version, packet, port):
-        """Create a FlowMod message with the appropriate version and data."""
-        if version == '0x01':
-            flow_mod = FlowMod10()
-            flow_mod.match.dl_src = packet.source.value
-            flow_mod.match.dl_dst = packet.destination.value
-            flow_mod.match.dl_type = packet.ether_type
-            flow_mod.actions.append(Output10(port=port))
+    def _create_flow(packet, port):
+        """Create a Flow message."""
+        flow = {}
+        match = {}
+        flow['priority'] = settings.FLOW_PRIORITY
 
-        else:
-            flow_mod = FlowMod13()
+        match['dl_src'] = packet.source.value
+        match['dl_dst'] = packet.destination.value
+        match['dl_type'] = packet.ether_type.value
 
-            match_dl_type = OxmTLV()
-            match_dl_type.oxm_field = OxmOfbMatchField.OFPXMT_OFB_ETH_TYPE
-            match_dl_type.oxm_value = packet.ether_type.value.to_bytes(2,
-                                                                       'big')
-            flow_mod.match.oxm_match_fields.append(match_dl_type)
+        flow['match'] = match
 
-            match_dl_src = OxmTLV()
-            match_dl_src.oxm_field = OxmOfbMatchField.OFPXMT_OFB_ETH_SRC
-            match_dl_src.oxm_value = packet.source.pack()
-            flow_mod.match.oxm_match_fields.append(match_dl_src)
+        flow['actions'] = [{'action_type': 'output',
+                            'port': port}]
 
-            match_dl_dst = OxmTLV()
-            match_dl_dst.oxm_field = OxmOfbMatchField.OFPXMT_OFB_ETH_DST
-            match_dl_dst.oxm_value = packet.destination.pack()
-            flow_mod.match.oxm_match_fields.append(match_dl_dst)
-
-            action = Output13(port=port)
-
-            instruction = InstructionApplyAction()
-            instruction.actions.append(action)
-
-            flow_mod.instructions.append(instruction)
-
-        flow_mod.command = FlowModCommand.OFPFC_ADD
-        flow_mod.priority = settings.FLOW_PRIORITY
-
-        return flow_mod
+        return flow
 
     @staticmethod
     def _create_packet_out(version, packet, ports, switch):
@@ -170,13 +147,11 @@ class Main(KytosNApp):
 
         # Add a flow to the switch if the destination is known
         if ports:
-            flow_mod = self._create_flow_mod(version, ethernet, ports[0])
-
-            event_out = KytosEvent(name=('kytos/of_l2ls.messages.out.'
-                                         'ofpt_flow_mod'),
-                                   content={'destination': event.source,
-                                            'message': flow_mod})
-            self.controller.buffers.msg_out.put(event_out)
+            flow = self._create_flow(ethernet, ports[0])
+            destination = switch.id
+            endpoint = f'{settings.FLOW_MANAGER_URL}/flows/{destination}'
+            data = {'flows': [flow]}
+            requests.post(endpoint, json=data)
 
         # Send the packet to correct destination or flood it
         packet_out = self._create_packet_out(version, packet_in, ports, switch)
