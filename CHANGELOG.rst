@@ -24,6 +24,15 @@ Security
 ========
 
 
+[1.2.0] - 2020-12-23
+********************
+Changed
+=======
+- Install and remove LLDP flows through the ``flow_manager`` NApp.
+- Do not send packets if `OFPPC_NO_FWD` is set on the interface.
+- Changed setup.py to alert when a test fails on Travis. 
+
+
 [1.1.2] - 2020-07-23
 ********************
 Added
@@ -100,3 +109,4 @@ Added
 - kytos.json file with NApp metadata.
 - LICENSE file.
 - First version of the NApp.
+
