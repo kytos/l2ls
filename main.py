@@ -54,6 +54,7 @@ class Main(KytosNApp):
 
         flow = {}
         flow['priority'] = 0
+        flow['table_id'] = settings.TABLE_ID
         flow['actions'] = [{'action_type': 'output',
                             'port': Port13.OFPP_CONTROLLER}]
 
@@ -69,6 +70,7 @@ class Main(KytosNApp):
         flow = {}
         match = {}
         flow['priority'] = settings.FLOW_PRIORITY
+        flow['table_id'] = settings.TABLE_ID
 
         match['dl_src'] = packet.source.value
         match['dl_dst'] = packet.destination.value

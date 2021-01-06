@@ -34,8 +34,10 @@ class TestMain(TestCase):
         flow_manager_url = 'http://localhost:8181/api/kytos/flow_manager/v2'
 
         mock_settings.FLOW_MANAGER_URL = flow_manager_url
+        mock_settings.TABLE_ID = 0
         expected_flow = {}
         expected_flow['priority'] = 0
+        expected_flow['table_id'] = 0
         expected_flow['actions'] = [{'action_type': 'output',
                                      'port': 123}]
 
@@ -61,6 +63,7 @@ class TestMain(TestCase):
         match = {}
 
         expected_flow['priority'] = 10
+        expected_flow['table_id'] = 0
 
         match['dl_src'] = '00:00:00:00:00:00:00:01'
         match['dl_dst'] = '00:00:00:00:00:00:00:02'
@@ -70,6 +73,7 @@ class TestMain(TestCase):
         expected_flow['actions'] = [{'action_type': 'output',
                                      'port': 123}]
         mock_settings.FLOW_PRIORITY = 10
+        mock_settings.TABLE_ID = 0
 
         packet = MagicMock()
         packet.source.value = '00:00:00:00:00:00:00:01'
