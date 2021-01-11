@@ -1,5 +1,6 @@
+########
 Overview
-========
+########
 
 |License| |Build| |Coverage| |Quality|
 
@@ -15,10 +16,11 @@ host. The destination host will answer to that packet and once the packet is
 received, the switch adds an entry to the table mapping the mac address of the
 destination host to a port. This process is repeated until all ports with a
 host connected are mapped. This algorithm can be used to update the table when
-a change is detected. 
+a change is detected.
 
+**********
 Installing
-==========
+**********
 
 All of the Kytos Network Applications are located in the NApps online
 repository. To install this NApp, run:
@@ -27,11 +29,12 @@ repository. To install this NApp, run:
 
    $ kytos napps install kytos/of_l2ls
 
+********
 Advanced
-========
+********
 
 L2 Learning Switch Operation
-----------------------------
+============================
 
 At the switch startup, it does not know which hosts are attached to its ports.
 So, when some host A sends a frame addressed to host B, the switch will
@@ -43,6 +46,60 @@ number.
 When the host B answers the request, the switch adds to this table an entry
 mapping the mac address of host B to the port in which it is connected. This
 process goes on until the switch learns which port all hosts are connected.
+
+######
+Events
+######
+
+********
+Listened
+********
+
+kytos/topology.switch.(enabled|disabled)
+========================================
+Listen when a switch was enabled or disabled.
+
+Content
+-------
+
+.. code-block:: python3
+
+   {
+     'dpid': <switch.id>
+   }
+
+kytos/of_core.v0x0[14].messages.in.ofpt_packet_in
+=================================================
+Listen PacketIn Event.
+
+Content
+-------
+
+.. code-block:: python3
+
+    {
+      'message': <object>, # instance of python-openflow PacketIn message
+      'source': <object> # instance of kytos.core.switch.Connection class
+    }
+
+*********
+Generated
+*********
+
+kytos/of_l2ls.messages.out.ofpt_packet_out
+==========================================
+Standard "message out" event with a PacketOut message to the switch containing
+a of_l2ls packet inside it.
+
+Content
+-------
+
+.. code-block:: python3
+
+    {
+      'message': <object>, # instance of python-openflow PacketOut message
+      'source': <object> # instance of kytos.core.switch.Connection class
+    }
 
 .. TAGs
 
