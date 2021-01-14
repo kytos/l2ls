@@ -29,6 +29,14 @@ repository. To install this NApp, run:
 
    $ kytos napps install kytos/of_l2ls
 
+************
+Requirements
+************
+
+- kytos/flow_manager
+- kytos/of_core
+- kytos/topology
+
 ********
 Advanced
 ********
