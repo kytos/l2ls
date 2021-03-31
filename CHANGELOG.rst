@@ -25,9 +25,14 @@ Security
 
 [1.2.1] - 2021-01-07
 ********************
+Added
+=====
+- Added NApp requirements and Kytos Events to ``README.rst``
+
 Fixed
 =====
-- Add ``table_id`` field required by consistency check in flows.
+- Added ``table_id`` field required by consistency check in flows.
+
 
 [1.2.0] - 2020-12-23
 ********************
